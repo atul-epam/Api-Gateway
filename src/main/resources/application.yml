@@ -1,0 +1,54 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: API-GATEWAY
+  cloud:
+    gateway:
+      routes:
+        - id: CARD-SERVICE
+          uri: lb://CARD-SERVICE
+          predicates:
+            - Path=/cardservice/**
+          filters:
+              name: CircuitBreaker
+              args:
+                name: fallbackCommand
+                fallbackuri: forward:/cardServiceFallBack
+        - id: STATEMENT-SERVICE
+          uri: lb://STATEMENT-SERVICE
+          predicates:
+            - Path=/statementservice/**
+          filters:
+            name: CircuitBreaker
+            args:
+              - name: fallbackCommand
+              - fallbackuri: forward:/statementServiceFallBack
+        - id: CARD-STATEMENT-SERVICE
+          uri: lb://CARD-STATEMENT-SERVICE
+          predicates:
+            - Path=/statement-by-card/**
+          filters:
+            name: CircuitBreaker
+            args:
+              name: fallbackCommand
+              fallbackuri: forward:/cardStatementServiceFallBack
+hystrix:
+  command:
+    fallback:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 4000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      default-zone: http://localhost:8761/eureka
+
+  instance:
+    hostname: localhost
+
